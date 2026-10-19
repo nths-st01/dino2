@@ -22,6 +22,15 @@
   const announcer = document.querySelector("#announcer");
 
   const player = { x: PLAYER_X, y: GROUND_Y - 58, width: 48, height: 58, velocityY: 0, grounded: true, jumpCount: 0, runTime: 0 };
+  const runnerFrames = [0, 1, 2, 3].map((index) => {
+    const image = new Image();
+    const source = `assets/runner/runner-${index}.png`;
+    image.addEventListener("error", () => console.error(`Failed to load runner sprite: ${source}`), { once: true });
+    image.src = source;
+    return image;
+  });
+  const jumpFrame = loadRunnerSprite("assets/runner/jump.png");
+  const fallFrame = loadRunnerSprite("assets/runner/fall.png");
   let obstacles = [];
   let coins = [];
   let powerUps = [];
@@ -43,6 +52,14 @@
   let lastFrame = 0;
   let animationTime = 0;
   let audioContext = null;
+  let crashTime = 0;
+
+  function loadRunnerSprite(source) {
+    const image = new Image();
+    image.addEventListener("error", () => console.error(`Failed to load runner sprite: ${source}`), { once: true });
+    image.src = source;
+    return image;
+  }
 
   function readBestScore() {
     try {
@@ -139,6 +156,12 @@
 
   function endGame() {
     if (state !== "running") return;
+    state = "crashing";
+    crashTime = 0.7;
+    player.velocityY = 0;
+  }
+
+  function finishGame() {
     state = "over";
     bestScore = Math.max(bestScore, score);
     saveBestScore();
@@ -175,6 +198,7 @@
   }
 
   function handleAction() {
+    if (state === "crashing") return;
     if (state === "running") jump();
     else startGame();
   }
@@ -280,6 +304,11 @@
     animationTime += deltaTime;
     updateScenery(deltaTime);
     updateParticles(deltaTime);
+    if (state === "crashing") {
+      crashTime -= deltaTime;
+      if (crashTime <= 0) finishGame();
+      return;
+    }
     if (state !== "running") return;
 
     elapsed += deltaTime;
@@ -325,6 +354,7 @@
       }
     });
     obstacles = obstacles.filter((obstacle) => !obstacle.passed && obstacle.x + obstacle.width > -20);
+    if (state !== "running") return;
 
     powerUps.forEach((powerUp) => {
       powerUp.x -= worldSpeed * deltaTime;
@@ -474,11 +504,8 @@
   }
 
   function drawPlayer() {
-    const bounce = player.grounded && state === "running" ? Math.abs(Math.sin(player.runTime * 9)) * 3 : 0;
-    const x = player.x;
-    const y = player.y + bounce;
     context.save();
-    context.translate(x, y);
+    context.translate(player.x, player.y);
     if (shieldCharges > 0 || shieldInvulnerability > 0) {
       context.globalAlpha = shieldCharges > 0 ? 0.68 : 0.45 + Math.sin(animationTime * 24) * 0.18;
       context.strokeStyle = "#b6e8ff";
@@ -495,53 +522,12 @@
     context.beginPath();
     context.ellipse(24, 57, 23, 4, 0, 0, Math.PI * 2);
     context.fill();
-
-    context.fillStyle = "#ff795e";
-    context.beginPath();
-    context.roundRect(3, 8, 43, 43, 13);
-    context.fill();
-    context.fillStyle = "#e5ac93";
-    context.beginPath();
-    context.roundRect(8, 3, 34, 44, 13);
-    context.fill();
-
-    context.fillStyle = "#d5fff0";
-    context.beginPath();
-    context.roundRect(13, 17, 24, 16, 7);
-    context.fill();
-    context.fillStyle = "#174b44";
-    context.beginPath();
-    context.arc(20, 24, 2.4, 0, Math.PI * 2);
-    context.arc(30, 24, 2.4, 0, Math.PI * 2);
-    context.fill();
-    context.strokeStyle = "#174b44";
-    context.lineWidth = 1.7;
-    context.beginPath();
-    context.moveTo(21, 29);
-    context.quadraticCurveTo(25, 33, 29, 29);
-    context.stroke();
-
-    context.strokeStyle = "#174b44";
-    context.lineWidth = 3;
-    context.beginPath();
-    context.moveTo(25, 3);
-    context.lineTo(25, -3);
-    context.stroke();
-    context.fillStyle = "#c6f074";
-    context.beginPath();
-    context.arc(25, -5, 4, 0, Math.PI * 2);
-    context.fill();
-
-    const step = player.grounded && state === "running" ? Math.sin(player.runTime * 9) * 5 : 0;
-    context.strokeStyle = "#173c37";
-    context.lineWidth = 5;
-    context.lineCap = "round";
-    context.beginPath();
-    context.moveTo(17, 48);
-    context.lineTo(16 - step, 55);
-    context.moveTo(33, 48);
-    context.lineTo(34 + step, 55);
-    context.stroke();
+    const frame = state === "crashing"
+      ? fallFrame
+      : !player.grounded
+        ? jumpFrame
+        : runnerFrames[Math.floor(player.runTime * 5) % runnerFrames.length];
+    if (frame.complete && frame.naturalWidth > 0) context.drawImage(frame, -8, -1, 64, 59);
     context.restore();
   }
 
