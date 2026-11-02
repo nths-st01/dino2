@@ -29,9 +29,21 @@
 
       <div class="game-frame">
         <div class="game-hud" aria-label="遊戲狀態">
-          <div class="hud-chip"><span class="hud-label">SCORE</span><strong id="score-value">00000</strong></div>
-          <div class="hud-chip coin-chip"><span class="coin-symbol" aria-hidden="true">✦</span><span class="hud-label">金幣</span><strong id="coin-value">0</strong></div>
-          <div class="hud-chip best-chip"><span class="hud-label">BEST</span><strong id="best-value">00000</strong></div>
+          <div class="hud-chip music-chip" id="music-controls" aria-label="音樂控制">
+            <button id="music-toggle-btn" class="music-btn" type="button" aria-label="關閉音樂" title="關閉／開啟音樂">
+              <span id="music-icon" aria-hidden="true">🔊</span>
+            </button>
+            <div class="volume-slider-wrap">
+              <input type="range" id="music-volume" min="0" max="100" value="40" step="1" aria-label="背景音樂音量" title="背景音樂音量">
+            </div>
+            <span id="volume-value" class="volume-value">40%</span>
+          </div>
+
+          <div class="hud-scores" aria-label="得分資訊">
+            <div class="hud-chip"><span class="hud-label">SCORE</span><strong id="score-value">00000</strong></div>
+            <div class="hud-chip coin-chip"><span class="coin-symbol" aria-hidden="true">✦</span><span class="hud-label">金幣</span><strong id="coin-value">0</strong></div>
+            <div class="hud-chip best-chip"><span class="hud-label">BEST</span><strong id="best-value">00000</strong></div>
+          </div>
         </div>
 
         <canvas id="game-canvas" width="960" height="540" aria-label="跑酷遊戲畫面。按空白鍵、向上鍵或點擊畫面跳躍。">
